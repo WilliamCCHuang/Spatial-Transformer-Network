@@ -56,6 +56,13 @@ def count_params(model):
     return sum(p.numel() for p in model.parameters())
 
 
+def save_model(model, args):
+    dirname = '/home/jarvis1121/AI/Rico_Repo/Spatial-Transformer-Network/model_save/'
+    file_name = f'{str(args.exp)}_{str(args.task_type)}_{str(args.transform_type)}_{str(args.model_name)}.pth'
+    file_path = dirname + file_name
+    torch.save(model.state_dict(), file_path)
+
+
 if __name__ == "__main__":
     bbox_1 = 0, 0, 10, 10
     bbox_2 = 5, 5, 15, 15
@@ -65,3 +72,5 @@ if __name__ == "__main__":
 
     if compute_iou(bbox_1, bbox_2) == 25 / (100 + 100 - 25):
         print('testing `compute_iou` successfully')
+    else:
+        raise ValueError('testing `compute_iou` unsuccessfully')

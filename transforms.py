@@ -6,8 +6,6 @@ import albumentations as albu
 from albumentations.pytorch import ToTensorV2
 
 
-
-
 def pil2array(image):
     image = np.array(image)
 
@@ -18,7 +16,7 @@ def pil2array(image):
 
 
 def project_transform(image):
-    size = (28, 28)
+    size = 28, 28
     mean, std = 0.0, 5.0
 
     src = np.float32([[0, 0], [0, 28], [28, 0], [28, 28]])
