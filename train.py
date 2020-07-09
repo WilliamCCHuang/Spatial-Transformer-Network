@@ -16,75 +16,6 @@ from utils import (
 )
 
 
-def build_argparse():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('--exp', help='Experiment number', type=int, default=1)
-    parser.add_argument('--task_type', default='DistortedMNIST')
-    parser.add_argument('--model_name', default='ST-CNN')
-    parser.add_argument('--transform_type', default='R')
-
-    parser.add_argument('--img_size', default=28)
-    parser.add_argument('--in_planes', default=1)
-    parser.add_argument('--val_split', type=float, default=1 / 6)
-
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=256)
-    parser.add_argument('--lr', default=0.01)
-
-    parser.add_argument('--seed', type=int, default=42)
-
-    return parser
-
-
-def check_argparse(args):
-    assert args.task_type in ['DistortedMNIST', 'MNISTAddition', 'CoLocalisationMNIST']
-    assert args.transform_type in ['R', 'RTS', 'P', 'E', 'T', 'TU', None]
-    assert args.model_name in ['CNN', 'FCN', 'ST-CNN', 'ST-FCN']
-
-
-def build_train_val_test_dataset(args):
-    if args.task_type == 'DistortedMNIST':
-        train_dataset = DistortedMNIST(mode='train', transform_type=args.transform_type, val_split=args.val_split, seed=args.seed)
-        val_dataset = DistortedMNIST(mode='val', transform_type=args.transform_type, val_split=args.val_split, seed=args.seed)
-        test_dataset = DistortedMNIST(mode='test', transform_type=args.transform_type, seed=args.seed)
-
-        train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-        val_dataloader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
-        test_dataloader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
-
-        return train_dataloader, val_dataloader, test_dataloader
-
-    elif args.task_type == 'MNISTAddition':
-        # TODO
-        raise NotImplementedError
-    else:
-        # TODO
-        raise NotImplementedError
-
-
-def build_model(args):
-    if args.task_type == 'DistortedMNIST':
-        if args.model_name == 'ST-CNN':
-            stn = BaseSTN(model_name=args.model_name, input_ch=args.in_planes, img_size=args.img_size)
-            base_cnn = BaseCNNModel(input_length=args.input_length)
-            model = STModel(base_stn=stn, base_nn_model=base_cnn)
-        elif args.model_name == 'ST-FCN':
-            stn = BaseSTN(model_name=args.model_name, in_planes=args.in_planes, img_size=args.img_size)
-            base_fcn = BaseFCNModel(img_size=args.img_size)
-            model = STModel(base_stn=stn, base_nn_model=base_fcn)
-        elif args.model_name == 'CNN':
-            model = CNNModel()
-        else:
-            model = FCNModel()
-    elif args.task_type == 'MNISTAddition':
-        raise NotImplementedError  # TODO
-    else:
-        raise NotImplementedError  # TODO
-    
-    return stn, model
-
-
 def build_scheduler(optimizer):
     lr_lambda = lambda iteration: 0.1 ** (iteration // 50000)
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
@@ -98,7 +29,7 @@ def main():
 
     # args
     parser = build_argparse()
-    args = parser.parse_args()
+    
     check_argparse(args)
 
     train_dataloader, val_dataloader, test_dataloader = build_train_val_test_dataset(args)
