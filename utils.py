@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -29,7 +30,23 @@ def show_images(images: torch.Tensor):
     plt.show()
 
 
-def compute_iou(bbox_1, bbox_2):
+def count_params(model):
+    return sum(p.numel() for p in model.parameters())
+
+
+def accuracy(y_pred, y_true):
+    assert y_pred.ndim == 1
+    assert y_true.ndim == 1
+    assert len(y_pred) == len(y_true)
+
+    return (y_pred == y_true) / len(y_true)
+
+
+def error(y_pred, y_true):
+    return 1 - accuracy(y_pred, y_true)
+
+
+def iou(bbox_1, bbox_2):
     x_min_1, y_min_1, x_max_1, y_max_1 = bbox_1
     x_min_2, y_min_2, x_max_2, y_max_2 = bbox_2
 
@@ -52,15 +69,21 @@ def compute_iou(bbox_1, bbox_2):
     return iou
 
 
-def count_params(model):
-    return sum(p.numel() for p in model.parameters())
-
-
-def save_model(model, args):
-    dirname = '/home/jarvis1121/AI/Rico_Repo/Spatial-Transformer-Network/model_save/'
-    file_name = f'{str(args.exp)}_{str(args.task_type)}_{str(args.transform_type)}_{str(args.model_name)}.pth'
-    file_path = dirname + file_name
+def save_model(model, args, dirpath):
+    file_name = f'{args.task_type}_{args.model_name}_{args.transform_type}_exp_{args.exp}.pth'
+    file_path = os.path.join(dirpath, file_name)
     torch.save(model.state_dict(), file_path)
+
+    print(f'Saved model to {file_path}')
+
+
+def load_best_model(model, args, dirpath):
+    file_name = f'{args.task_type}_{args.model_name}_{args.transform_type}_exp_{args.exp}.pth'
+    file_path = os.path.join(dirpath, file_name)
+
+    model.load_state_dict(torch.load(file_path))
+
+    return model
 
 
 if __name__ == "__main__":
@@ -70,7 +93,7 @@ if __name__ == "__main__":
     # overlap = 25
     # area_1 = area_2 = 100
 
-    if compute_iou(bbox_1, bbox_2) == 25 / (100 + 100 - 25):
-        print('testing `compute_iou` successfully')
+    if iou(bbox_1, bbox_2) == 25 / (100 + 100 - 25):
+        print('testing `iou` successfully')
     else:
-        raise ValueError('testing `compute_iou` unsuccessfully')
+        raise ValueError('testing `iou` unsuccessfully')

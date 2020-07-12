@@ -5,8 +5,8 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from utils import prepare_mnist, show_images
 from transforms import get_transforms
+from utils import prepare_mnist, show_images
 
 
 class BaseMNIST(Dataset, abc.ABC):
@@ -59,19 +59,19 @@ class DistortedMNIST(BaseMNIST):
         super(DistortedMNIST, self).__init__(mode, transform_type, val_split, seed)
 
     def __getitem__(self, idx):
-        image, label = self.mnist[idx]
+        img, label = self.mnist[idx]
 
         if self.post_transform:
-            augmented = self.post_transform(image=image)
+            augmented = self.post_transform(image=img)
 
             if isinstance(augmented, dict):
                 # transformation of albumentations
-                image = augmented['image']
+                img = augmented['image']
             else:
                 # custom transformation
-                image = augmented
+                img = augmented
 
-        return image, label
+        return img, label
 
 
 class MNISTAddition(BaseMNIST):
@@ -82,13 +82,13 @@ class MNISTAddition(BaseMNIST):
     def __getitem__(self, idx):
         random_idx = np.random.choice(self.index_list)
 
-        image_1, label_1 = self.mnist[idx]
-        image_2, label_2 = self.mnist[random_idx]
+        img_1, label_1 = self.mnist[idx]
+        img_2, label_2 = self.mnist[random_idx]
 
-        image = torch.cat([image_1, image_2], dim=0)  # (2, 42, 42)
+        img = torch.cat([img_1, img_2], dim=0)  # (2, 42, 42)
         label = label_1 + label_2
 
-        return image, label
+        return img, label
 
 
 class CoLocalisationMNIST(BaseMNIST):
@@ -98,28 +98,28 @@ class CoLocalisationMNIST(BaseMNIST):
         super(CoLocalisationMNIST, self).__init__(mode, transform_type, val_split, seed)
 
     def __getitem__(self, idx):
-        image, label = self.mnist[idx]
+        img, label = self.mnist[idx]
 
         bboxes = [[0.0, 0.0, 28, 28]]  # [x_min, y_min, x_max, y_max]
         category_id = [label]
-        augmented = self.post_transform(image=image, bboxes=bboxes, category_id=category_id)
-        image = augmented['image']
+        augmented = self.post_transform(image=img, bboxes=bboxes, category_id=category_id)
+        img = augmented['image']
         bbox = augmented['bboxes'][0]
 
         if self.cluster_transform:
             random_idx = np.random.choice(self.index_list)
-            random_image, _ = self.mnist[random_idx]
+            random_img, _ = self.mnist[random_idx]
             
             for _ in range(16):
-                augmented = self.cluster_transform(image=random_image)
+                augmented = self.cluster_transform(image=random_img)
                 random_crop = augmented['image']
-                image += random_crop
+                img += random_crop
 
-        image[image > 255] = 255
-        image = transforms.ToTensor()(image)  # (1, 84, 84)
+        img[img > 255] = 255
+        img = transforms.ToTensor()(img)  # (1, 84, 84)
         bbox = torch.tensor(bbox)  # (4,)  # [x_min, y_min, x_max, y_max]
 
-        return image, bbox, label
+        return img, bbox, label
 
 
 if __name__ == "__main__":
@@ -138,12 +138,12 @@ if __name__ == "__main__":
     else:
         print('Splitting training and validation datasets successfully')
 
-    # try to show transformed images
+    # try to show transformed imgs
     dataset = DistortedMNIST(mode='train', transform_type='E', val_split=0.3)
     dataloader = DataLoader(dataset, batch_size=64)
 
     for imgs, labels in dataloader:
-        print('images:', imgs.size())
+        print('imgs:', imgs.size())
         print('labels:', labels.size())
         print(labels)
         show_images(imgs)
@@ -153,7 +153,7 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=64)
 
     for imgs, labels in dataloader:
-        print('images:', imgs.size())
+        print('imgs:', imgs.size())
         print('labels:', labels.size())
         print(labels)
         show_images(imgs)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=64)
 
     for imgs, bboxes, labels in dataloader:
-        print('images:', imgs.size())
+        print('imgs:', imgs.size())
         print('bboxes:', bboxes.size())
         print(bboxes)
         print('labels:', labels.size())
