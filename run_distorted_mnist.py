@@ -1,7 +1,7 @@
 import os
 import argparse
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import torch
 import torch.nn as nn
@@ -65,11 +65,11 @@ def get_dataloaders(args):
 
 def get_model(model_name, img_size, in_channels):
     if model_name == 'ST-CNN':
-        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels)
+        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels, fc_units=1)
         backbone = CNN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'ST-FCN':
-        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels)
+        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels, fc_units=1)
         backbone = FCN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'CNN':
@@ -92,7 +92,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
     best_loss = np.inf
     best_error = np.inf
 
-    for epoch in enumerate(tqdm(args.epochs, leave=False, desc='training')):
+    for epoch in enumerate(tqdm(range(args.epochs), leave=False, desc='training')):
         model.train()
 
         for i, (imgs, labels) in enumerate(train_dataloader):
@@ -114,6 +114,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
             steps += 1
 
         val_loss, val_error = evaluate(model, val_dataloader, criterion, writer, args)
+        print('Epoch {2d}: val loss = {.4f}, val error = {.4f}'.format(epoch, val_loss, val_error))
 
         if best_loss > val_loss or best_error > val_error:
             best_loss = val_loss if best_loss > val_loss else best_loss
@@ -136,6 +137,8 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     y_pred = torch.zeros((total, classes))
 
     for i, (imgs, labels) in enumerate(tqdm(dataloader, leave=False, desc='evaluating')):
+        imgs, labels = imgs.to(device), labels.to(device)
+
         start = i * args.batch_size
         end = (i + 1) * args.batch_size
 
@@ -167,7 +170,7 @@ def main():
     check_args(args)
 
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)
-    _, in_channels, width, height = next(train_dataloader)[0].size()
+    in_channels, width, height = train_dataloader.dataset[0][0].size()
 
     model = get_model(args.model_name, width, in_channels)
     model = model.to(device)
@@ -185,6 +188,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    args = build_args()
-    print(args.task_type)
+    main()

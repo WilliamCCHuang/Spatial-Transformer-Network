@@ -7,8 +7,12 @@ from torchvision.datasets import MNIST
 from torchvision.utils import make_grid
 
 
+PATH = os.path.dirname(os.path.realpath(__file__))
+DATA_DIR = os.path.join(PATH, 'data')
+
+
 def prepare_mnist(train, transform):
-    dataset = MNIST(root='../data',
+    dataset = MNIST(root=DATA_DIR,
                     train=train,
                     download=True,
                     transform=transform)

@@ -10,6 +10,7 @@ class CNN(nn.Module):
                  conv1_kernel_size_size=9, conv1_out_channels=32,
                  conv2_kernel_size_size=7, conv2_out_channels=64,
                  fc_units=10):
+        super().__init__()
         
         self.img_size = img_size
         self.in_channels = in_channels
@@ -50,6 +51,7 @@ class CNN(nn.Module):
 class FCN(nn.Module):
     def __init__(self, img_size, in_channels=1,
                  fc1_units=128, fc2_units=128, fc3_units=10):
+        super().__init__()
 
         self.img_size = img_size
         self.in_channels = in_channels
@@ -84,6 +86,7 @@ class SpatialTransformer(nn.Module):
                  fc_units=10,
                  fc1_units=32, fc2_units=32, fc3_units=10,
                  transform_type='Aff'):
+        super().__init__()
 
         assert model_name in ['ST-CNN', 'ST-FCN'], 'model name must be either ST-CNN or ST-FCN'
         assert transform_type in ['Aff', 'Proj', 'TPS'], 'type of transformation must be one of Aff, Proj, TPS'
@@ -163,6 +166,8 @@ class SpatialTransformer(nn.Module):
 
 class SpatialTransformerNetwork(nn.Module):
     def __init__(self, spatial_transformer, backbone):
+        super().__init__()
+
         self.spatial_transformer = spatial_transformer
         self.backbone = backbone
 
@@ -183,8 +188,12 @@ class SpatialTransformerNetwork(nn.Module):
         return self.spatial_transformer.num_params + self.backbone.num_params
 
     def hook(self, module, grad_in, grad_out):
+        # grad_in: (None, torch.Size([256, 28, 28, 2]))
+        # grad_out: (torch.Size([256, 1, 28, 28]),)
+
         assert isinstance(grad_in, tuple)
 
-        norm = torch.sqrt(sum(sum(p.detach().cpu().numpy()**2) for p in grad_in))
+        norm = torch.sqrt(torch.sum(grad_in[1]**2))
 
-        self.norm = norm
+        print(norm)
+        self.norm = norm.numpy()
