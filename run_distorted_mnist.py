@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
 from datasets import DistortedMNIST
-from utils import error, save_model, load_best_model
+from utils import error, save_model, load_model
 from models import CNN, FCN, SpatialTransformer, SpatialTransformerNetwork
 
 
@@ -92,10 +92,10 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
     best_loss = np.inf
     best_error = np.inf
 
-    for epoch in enumerate(tqdm(range(args.epochs), leave=False, desc='training')):
+    for epoch in enumerate(tqdm(range(args.epochs), leave=False, desc='epochs')):
         model.train()
 
-        for i, (imgs, labels) in enumerate(train_dataloader):
+        for i, (imgs, labels) in enumerate(tqdm(train_dataloader, leave=False, desc='batches')):
             imgs, labels = imgs.to(device), labels.to(device)
 
             optimizer.zero_grad()
@@ -113,7 +113,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             steps += 1
 
-        val_loss, val_error = evaluate(model, val_dataloader, criterion, writer, args)
+        val_loss, val_error = evaluate(model, val_dataloader, criterion, device, writer, args)
         print('Epoch {2d}: val loss = {.4f}, val error = {.4f}'.format(epoch, val_loss, val_error))
 
         if best_loss > val_loss or best_error > val_error:
@@ -122,7 +122,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             save_model(model, val_loss, val_error, args, MODELS_DIR)
 
-    model = load_best_model(model, args, MODELS_DIR)
+    model = load_model(model, args, MODELS_DIR)
 
     return model
 
