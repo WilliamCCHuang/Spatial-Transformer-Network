@@ -193,7 +193,6 @@ class SpatialTransformerNetwork(nn.Module):
 
         assert isinstance(grad_in, tuple)
 
-        norm = torch.sqrt(torch.sum(grad_in[1]**2))
+        norm = torch.sqrt(torch.sum(grad_in[1].detach().cpu()**2))
 
-        print(norm)
         self.norm = norm.numpy()

@@ -57,7 +57,7 @@ def get_dataloaders(args):
     test_dataset = DistortedMNIST(mode='test', transform_type=args.transform_type, seed=args.seed)
 
     train_dataloader = DataLoader(train_dataset, args.batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, args.batch_size, shuffle=False)
+    val_dataloader = DataLoader(val_dataset, args.batch_size, shuffle=False, )
     test_dataloader = DataLoader(test_dataset, args.batch_size, shuffle=False)
 
     return train_dataloader, val_dataloader, test_dataloader
@@ -113,7 +113,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             steps += 1
 
-        val_loss, val_error = evaluate(model, val_dataloader, criterion, writer, args)
+        val_loss, val_error = evaluate(model, val_dataloader, criterion, device, writer, args, epoch)
         print('Epoch {2d}: val loss = {.4f}, val error = {.4f}'.format(epoch, val_loss, val_error))
 
         if best_loss > val_loss or best_error > val_error:
@@ -132,7 +132,7 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     model.eval()
 
     total = len(dataloader)
-    classes = next(dataloader)[1].size(1)
+    classes = dataloader.dataset[0][0].size(1)
     y_true = torch.zeros((total,))
     y_pred = torch.zeros((total, classes))
 
@@ -140,11 +140,11 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
         imgs, labels = imgs.to(device), labels.to(device)
 
         start = i * args.batch_size
-        end = (i + 1) * args.batch_size
+        end = min((i + 1) * args.batch_size, len(dataloader))
 
         outputs = model(imgs)
 
-        y_pred[start:end] = outputs
+        y_pred[start:end, :] = outputs
         y_true[start:end] = labels
 
     assert end == len(dataloader), 'some data are left'
@@ -155,7 +155,7 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     
     loss_tag = 'val_loss' if epoch is not None else 'test_loss'
     error_tag = 'val_error' if epoch is not None else 'test_error'
-    epoch = epoch or 0
+    epoch = epoch or -1
     
     writer.add_scalar(loss_tag, loss, epoch)
     writer.add_scalar(error_tag, error_rate, epoch)
