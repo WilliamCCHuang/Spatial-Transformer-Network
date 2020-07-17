@@ -32,9 +32,9 @@ def build_args():
     parser.add_argument('--model_name', type=str, default='ST-CNN')
     parser.add_argument('--transform_type', type=str, default='R')
 
-    parser.add_argument('--epochs', type=int, default=10)
-    parser.add_argument('--val_split', type=float, default=0.3)
+    parser.add_argument('--iterations', type=int, default=15 * 10**4)
     parser.add_argument('--batch_size', type=int, default=256)
+    parser.add_argument('--val_split', type=float, default=0.3)
     parser.add_argument('--lr', type=float, default=0.01)
 
     parser.add_argument('--seed', type=int, default=42)
@@ -88,14 +88,19 @@ def get_scheduler(optimizer):
 
 
 def train(model, train_dataloader, val_dataloader, criterion, optimizer, scheduler, device, writer, args):
+    total_data = len(train_dataloader.dataset)
+    iterations_per_epoch = np.floor(total_data / args.batch_size)
+    epochs = int(np.floor(args.iterations / iterations_per_epoch))
+
     steps = 0
+    stop = False
     best_loss = np.inf
     best_error = np.inf
 
-    for epoch in enumerate(tqdm(range(args.epochs), leave=False, desc='epochs')):
+    for epoch in tqdm(range(epochs), leave=False, desc='training'):
         model.train()
 
-        for i, (imgs, labels) in enumerate(tqdm(train_dataloader, leave=False, desc='batches')):
+        for i, (imgs, labels) in enumerate(train_dataloader):
             imgs, labels = imgs.to(device), labels.to(device)
 
             optimizer.zero_grad()
@@ -113,14 +118,22 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             steps += 1
 
-        val_loss, val_error = evaluate(model, val_dataloader, criterion, device, writer, args)
-        print('Epoch {2d}: val loss = {.4f}, val error = {.4f}'.format(epoch, val_loss, val_error))
+            if steps == args.iterations:
+                stop = True
+                break
+
+        val_loss, val_error = evaluate(model, val_dataloader, criterion, device, writer, args, epoch)
+        print('Epoch {:2d}: val loss = {:.4f}, val error = {:.4f}'.format(epoch, val_loss, val_error))
 
         if best_loss > val_loss or best_error > val_error:
             best_loss = val_loss if best_loss > val_loss else best_loss
             best_error = val_error if best_error > val_error else best_error
 
-            save_model(model, val_loss, val_error, args, MODELS_DIR)
+            save_model(model, args, MODELS_DIR)
+
+        if stop:
+            print('training done!')
+            break
 
     model = load_model(model, args, MODELS_DIR)
 
@@ -131,23 +144,24 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     model.eval()
 
-    total = len(dataloader)
-    classes = dataloader.dataset[0][0].size(1)
-    y_true = torch.zeros((total,))
-    y_pred = torch.zeros((total, classes))
+    total = len(dataloader.dataset)
+    classes = 10
 
-    for i, (imgs, labels) in enumerate(tqdm(dataloader, leave=False, desc='evaluating')):
+    y_true = torch.zeros((total,), dtype=torch.long)
+    y_pred = torch.zeros((total, classes), dtype=torch.float)
+
+    for i, (imgs, labels) in enumerate(dataloader):
         imgs, labels = imgs.to(device), labels.to(device)
 
         start = i * args.batch_size
-        end = min((i + 1) * args.batch_size, len(dataloader))
+        end = min((i + 1) * args.batch_size, total)
 
         outputs = model(imgs)
 
         y_pred[start:end, :] = outputs
         y_true[start:end] = labels
 
-    assert end == len(dataloader), 'some data are left'
+    assert end == total, 'some data are left'
 
     loss = criterion(y_pred, y_true)
     y_pred = y_pred.argmax(dim=-1)
@@ -160,7 +174,7 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     writer.add_scalar(loss_tag, loss, epoch)
     writer.add_scalar(error_tag, error_rate, epoch)
 
-    return loss.item(), error_rate.item()
+    return loss.item(), error_rate
 
 
 def main():
@@ -183,6 +197,8 @@ def main():
 
     model = train(model, train_dataloader, val_dataloader, criterion, optimizer, scheduler, device, writer, args)
     test_loss, test_error = evaluate(model, test_dataloader, criterion, device, writer, args)
+
+    print('Final: test loss = {:.4f}, test error = {:.4f}'.format(test_loss, test_error))
 
     writer.close()
 

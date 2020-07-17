@@ -39,11 +39,16 @@ def count_params(model):
 
 
 def accuracy(y_pred, y_true):
+    if isinstance(y_pred, torch.Tensor):
+        y_pred = y_pred.detach().cpu().numpy()
+    if isinstance(y_true, torch.Tensor):
+        y_true = y_true.detach().cpu().numpy()
+        
     assert y_pred.ndim == 1
     assert y_true.ndim == 1
     assert len(y_pred) == len(y_true)
 
-    return (y_pred == y_true) / len(y_true)
+    return (y_pred == y_true).sum() / len(y_true)
 
 
 def error(y_pred, y_true):

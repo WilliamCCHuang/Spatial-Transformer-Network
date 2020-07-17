@@ -192,4 +192,4 @@ class SpatialTransformerNetwork(nn.Module):
         # grad_out: (torch.Size([256, 1, 28, 28]),)
 
         norm = torch.sqrt(torch.sum(grad_in[1]**2))
-        self.norm = norm.detach().numpy()
+        self.norm = norm.detach().cpu().numpy()
