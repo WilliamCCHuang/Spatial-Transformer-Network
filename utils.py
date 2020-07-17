@@ -81,7 +81,7 @@ def save_model(model, args, dirpath):
     print(f'Saved model to {file_path}')
 
 
-def load_best_model(model, args, dirpath):
+def load_model(model, args, dirpath):
     file_name = f'{args.task_type}_{args.model_name}_{args.transform_type}_exp_{args.exp}.pth'
     file_path = os.path.join(dirpath, file_name)
 
