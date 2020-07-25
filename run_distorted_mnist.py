@@ -37,6 +37,7 @@ def build_args():
     parser.add_argument('--val_split', type=float, default=0.3)
     parser.add_argument('--lr', type=float, default=0.01)
 
+    parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--seed', type=int, default=42)
 
     args = parser.parse_args()
@@ -49,6 +50,35 @@ def build_args():
 def check_args(args):
     assert args.model_name in ['CNN', 'FCN', 'ST-CNN', 'ST-FCN']
     assert args.transform_type in ['R', 'RTS', 'P', 'E', 'T', 'TU', None]
+    
+    if (args.device not in ['cpu', 'tpu']) and ('cuda' not in args.device):
+        raise RuntimeError('`--device` can only be `cpu`, `cuda`, `tpu`')
+
+
+def get_device(args):
+    if args.device == 'tpu':
+        if not os.environ['COLAB_TPU_ADDR']:
+            raise RuntimeError('Make sure to select TPU from Edit > Notebook settings > Hardware accelerator')
+
+        VERSION = '20200325'  # @param ["1.5" , "20200325", "nightly"]
+        ! curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py
+        ! python pytorch-xla-env-setup.py --version $VERSION
+
+        import torch_xla
+        import torch_xla.core.xla_model as xm
+
+        device = xm.xla_device()
+    elif args.device == 'cpu':
+        device = torch.device('cpu')
+    else:
+        if torch.cuda.is_available():
+            device = torch.device(args.device)
+        else:
+            raise RuntimeError('Not found GPU!')
+
+    print(f'Using device: {device}')
+
+    return device
 
 
 def get_dataloaders(args):
@@ -178,8 +208,6 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
 
 
 def main():
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
     args = build_args()
     check_args(args)
 
