@@ -59,10 +59,10 @@ def get_device(args):
     if args.device == 'tpu':
         if not os.environ['COLAB_TPU_ADDR']:
             raise RuntimeError('Make sure to select TPU from Edit > Notebook settings > Hardware accelerator')
-
+        
         VERSION = '20200325'  # @param ["1.5" , "20200325", "nightly"]
-        ! curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py
-        ! python pytorch-xla-env-setup.py --version $VERSION
+        os.system('curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py')
+        os.system(f'python pytorch-xla-env-setup.py --version ${VERSION}')
 
         import torch_xla
         import torch_xla.core.xla_model as xm
@@ -211,6 +211,8 @@ def main():
     args = build_args()
     check_args(args)
 
+    device = get_device(args)
+    
     train_dataloader, val_dataloader, test_dataloader = get_dataloaders(args)
     in_channels, width, height = train_dataloader.dataset[0][0].size()
 
