@@ -95,11 +95,11 @@ def get_dataloaders(args):
 
 def get_model(model_name, img_size, in_channels):
     if model_name == 'ST-CNN':
-        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=1)
+        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=6)
         backbone = CNN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'ST-FCN':
-        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=1)
+        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=6)
         backbone = FCN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'CNN':
@@ -142,6 +142,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
             scheduler.step(i)
 
             writer.add_scalar('train loss', train_loss.item(), steps)
+            writer.add_scalar('lr', optimizer.param_groups[0]['lr'], steps)
 
             if i % 100 == 0:
                 writer.add_scalar('norm', model.norm, steps)
