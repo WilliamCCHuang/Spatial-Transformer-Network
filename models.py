@@ -78,7 +78,7 @@ class FCN(nn.Module):
         return count_params(self)
 
 
-class SpatialTransformer(nn.Module):
+class SpatialTransformerModule(nn.Module):
     def __init__(self, model_name,
                  img_size, in_channels,
                  conv1_kernel_size=5, conv1_out_channels=20,
@@ -132,18 +132,9 @@ class SpatialTransformer(nn.Module):
                 nn.Linear(self.fc2_units, self.fc3_units)  # (6)
             )
 
-        affine_matrix = torch.ones((1, 2, 3), dtype=torch.float)  # (1, 2, 3)
-        self.register_buffer('affine_matrix', affine_matrix)
-        # self.register_buffer('cos_matrix', torch.tensor([[1., 0, 0],
-        #                                                  [0, 1., 0]], requires_grad=False).unsqueeze(0))  # (1,2,3)
-        # self.register_buffer('sin_matrix', torch.tensor([[0, -1., 0],
-        #                                                  [1., 0, 0]], requires_grad=False).unsqueeze(0))  # (1,2,3)
-
     def generate_theta(self, x):
         theta = self.loc(x)
         theta = theta.view((-1, 2, 3))  # (N, 2, 3)
-        theta = theta * self.affine_matrix
-        # theta = torch.cos(theta) * self.cos_matrix + torch.sin(theta) * self.sin_matrix
 
         return theta
 

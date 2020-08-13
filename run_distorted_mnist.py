@@ -11,7 +11,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from datasets import DistortedMNIST
 from utils import error, save_model, load_model
-from models import CNN, FCN, SpatialTransformer, SpatialTransformerNetwork
+from models import CNN, FCN, SpatialTransformerModule, SpatialTransformerNetwork
 
 
 PATH = os.path.dirname(os.path.realpath(__file__))
@@ -95,11 +95,11 @@ def get_dataloaders(args):
 
 def get_model(model_name, img_size, in_channels):
     if model_name == 'ST-CNN':
-        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels, fc_units=1)
+        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=1)
         backbone = CNN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'ST-FCN':
-        spatial_transformer = SpatialTransformer(model_name, img_size, in_channels, fc_units=1)
+        spatial_transformer = SpatialTransformerModule(model_name, img_size, in_channels, fc_units=1)
         backbone = FCN(img_size, in_channels)
         model = SpatialTransformerNetwork(spatial_transformer, backbone)
     elif model_name == 'CNN':
