@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from torchvision.utils import make_grid
 
 from datasets import DistortedMNIST
 from utils import error, save_model, load_model
@@ -62,7 +63,7 @@ def get_device(args):
         
         VERSION = '20200325'  # @param ["1.5" , "20200325", "nightly"]
         os.system('curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py')
-        os.system(f'python pytorch-xla-env-setup.py --version ${VERSION}')
+        os.system(f'python pytorch-xla-env-setup.py --version {VERSION}')
 
         import torch_xla
         import torch_xla.core.xla_model as xm
@@ -146,6 +147,15 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             if i % 100 == 0:
                 writer.add_scalar('norm', model.norm, steps)
+            
+            if i % 10000 == 0:
+                ori_imgs = imgs[:10]  # (8, 3, W, H)
+                aug_imgs = model.transform(ori_imgs)  # (8, 3, W, H)
+                all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (16, 3, W, H)
+
+                assert all_imgs.size(0) == 20
+
+                writer.add_images(make_grid(all_imgs, nrow=10))
 
             steps += 1
 
