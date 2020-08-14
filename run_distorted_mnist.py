@@ -65,7 +65,7 @@ def get_device(args):
         os.system('curl https://raw.githubusercontent.com/pytorch/xla/master/contrib/scripts/env-setup.py -o pytorch-xla-env-setup.py')
         os.system(f'python pytorch-xla-env-setup.py --version {VERSION}')
 
-        import torch_xla
+        # import torch_xla
         import torch_xla.core.xla_model as xm
 
         device = xm.xla_device()
@@ -148,14 +148,13 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
             if i % 100 == 0:
                 writer.add_scalar('norm', model.norm, steps)
             
-            if i % 10000 == 0:
-                ori_imgs = imgs[:10]  # (8, 3, W, H)
-                aug_imgs = model.transform(ori_imgs)  # (8, 3, W, H)
-                all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (16, 3, W, H)
+            if i % 10**1 == 0:
+                ori_imgs = imgs[:10]  # (10, 1, W, H)
+                aug_imgs = model.transform(ori_imgs)  # (10, 1, H, W)
+                all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (20, 1, H, W)
+                all_imgs = make_grid(all_imgs, nrow=10)  # (3, H, W)
 
-                assert all_imgs.size(0) == 20
-
-                writer.add_images(make_grid(all_imgs, nrow=10))
+                writer.add_image('Original / Transformed', all_imgs, steps)
 
             steps += 1
 
