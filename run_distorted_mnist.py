@@ -213,8 +213,8 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     y_pred = y_pred.argmax(dim=-1)
     error_rate = error(y_pred, y_true)
     
-    loss_tag = 'val_loss' if epoch is not None else 'test_loss'
-    error_tag = 'val_error' if epoch is not None else 'test_error'
+    loss_tag = 'val loss' if epoch is not None else 'test loss'
+    error_tag = 'val error' if epoch is not None else 'test error'
     epoch = epoch or -1
     
     writer.add_scalar(loss_tag, loss, epoch)
@@ -237,7 +237,7 @@ def main():
 
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
-    scheduler = get_scheduler(optimizer)
+    scheduler = get_scheduler(optimizer, args)
 
     writer = SummaryWriter(os.path.join(LOGS_DIR, f'exp_{args.exp}'))
 
