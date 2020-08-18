@@ -37,6 +37,11 @@ def build_args():
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument('--val_split', type=float, default=0.3)
     parser.add_argument('--lr', type=float, default=0.01)
+    parser.add_argument('--lr_decay_steps', type=int, default=50000)
+    parser.add_argument('--lr_decay_gamma', type=float, default=0.1)
+
+    parser.add_argument('--recode_norm', type=int, default=1000)
+    parser.add_argument('--record_image', type=int, default=1000)
 
     parser.add_argument('--device', type=str, default='cuda:0')
     parser.add_argument('--seed', type=int, default=42)
@@ -111,8 +116,8 @@ def get_model(model_name, img_size, in_channels):
     return model
 
 
-def get_scheduler(optimizer):
-    lr_lambda = lambda iteration: 0.1 ** (iteration // 50000)
+def get_scheduler(optimizer, args):
+    lr_lambda = lambda iteration: args.lr_decay_gamma ** (iteration // args.lr_decay_steps)
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
 
     return scheduler
@@ -131,7 +136,7 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
     for epoch in tqdm(range(epochs), leave=False, desc='training'):
         model.train()
 
-        for i, (imgs, labels) in enumerate(train_dataloader):
+        for imgs, labels in train_dataloader:
             imgs, labels = imgs.to(device), labels.to(device)
 
             optimizer.zero_grad()
@@ -140,24 +145,24 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
 
             train_loss.backward()
             optimizer.step()
-            scheduler.step(i)
+            scheduler.step(steps)
 
             writer.add_scalar('train loss', train_loss.item(), steps)
             writer.add_scalar('lr', optimizer.param_groups[0]['lr'], steps)
 
-            if i % 100 == 0:
+            if steps % args.recode_norm == 0:
                 writer.add_scalar('norm', model.norm, steps)
             
-            if i % 10**1 == 0:
+            if steps % args.record_image == 0:
                 ori_imgs = imgs[:10]  # (10, 1, W, H)
                 aug_imgs = model.transform(ori_imgs)  # (10, 1, H, W)
                 all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (20, 1, H, W)
                 all_imgs = make_grid(all_imgs, nrow=10)  # (3, H, W)
 
                 writer.add_image('Original / Transformed', all_imgs, steps)
-
+            
             steps += 1
-
+            
             if steps == args.iterations:
                 stop = True
                 break

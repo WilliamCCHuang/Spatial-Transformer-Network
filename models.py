@@ -132,6 +132,12 @@ class SpatialTransformerModule(nn.Module):
                 nn.Linear(self.fc2_units, self.fc3_units)  # (6)
             )
 
+        self.reset_params()
+
+    def reset_params(self):
+        # set bias of the last layer
+        self.loc[-1].bias.data = torch.tensor([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+
     def generate_theta(self, x):
         theta = self.loc(x)
         theta = theta.view((-1, 2, 3))  # (N, 2, 3)
