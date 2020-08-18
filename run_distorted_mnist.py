@@ -39,6 +39,7 @@ def build_args():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_steps', type=int, default=50000)
     parser.add_argument('--lr_decay_gamma', type=float, default=0.1)
+    parser.add_argument('--momentum', type=float, default=0.9)
 
     parser.add_argument('--recode_norm', type=int, default=1000)
     parser.add_argument('--record_image', type=int, default=1000)
@@ -235,7 +236,7 @@ def main():
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
     scheduler = get_scheduler(optimizer)
 
     writer = SummaryWriter(os.path.join(LOGS_DIR, f'exp_{args.exp}'))
