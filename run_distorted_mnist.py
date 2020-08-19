@@ -39,6 +39,7 @@ def build_args():
     parser.add_argument('--lr', type=float, default=0.01)
     parser.add_argument('--lr_decay_steps', type=int, default=50000)
     parser.add_argument('--lr_decay_gamma', type=float, default=0.1)
+    parser.add_argument('--momentum', type=float, default=0.9)
 
     parser.add_argument('--recode_norm', type=int, default=1000)
     parser.add_argument('--record_image', type=int, default=1000)
@@ -212,8 +213,8 @@ def evaluate(model, dataloader, criterion, device, writer, args, epoch=None):
     y_pred = y_pred.argmax(dim=-1)
     error_rate = error(y_pred, y_true)
     
-    loss_tag = 'val_loss' if epoch is not None else 'test_loss'
-    error_tag = 'val_error' if epoch is not None else 'test_error'
+    loss_tag = 'val loss' if epoch is not None else 'test loss'
+    error_tag = 'val error' if epoch is not None else 'test error'
     epoch = epoch or -1
     
     writer.add_scalar(loss_tag, loss, epoch)
@@ -235,8 +236,8 @@ def main():
     model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr=args.lr)
-    scheduler = get_scheduler(optimizer)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    scheduler = get_scheduler(optimizer, args)
 
     writer = SummaryWriter(os.path.join(LOGS_DIR, f'exp_{args.exp}'))
 
