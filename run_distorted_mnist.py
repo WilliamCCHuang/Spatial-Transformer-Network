@@ -93,9 +93,9 @@ def get_dataloaders(args):
     val_dataset = DistortedMNIST(mode='val', transform_type=args.transform_type, val_split=args.val_split, seed=args.seed)
     test_dataset = DistortedMNIST(mode='test', transform_type=args.transform_type, seed=args.seed)
 
-    train_dataloader = DataLoader(train_dataset, args.batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, args.batch_size, shuffle=False, )
-    test_dataloader = DataLoader(test_dataset, args.batch_size, shuffle=False)
+    train_dataloader = DataLoader(train_dataset, args.batch_size, shuffle=True, num_workers=os.cpu_count())
+    val_dataloader = DataLoader(val_dataset, args.batch_size, shuffle=False, num_workers=os.cpu_count())
+    test_dataloader = DataLoader(test_dataset, args.batch_size, shuffle=False, num_workers=os.cpu_count())
 
     return train_dataloader, val_dataloader, test_dataloader
 
