@@ -136,7 +136,10 @@ class SpatialTransformerModule(nn.Module):
 
     def reset_params(self):
         # set bias of the last layer
-        self.loc[-1].bias.data = torch.tensor([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+        old_bias = self.loc[-1].bias.data  # (6,)
+        new_bias = torch.randn_like(old_bias) * 0.1
+        new_bias = new_bias + torch.tensor([1.0, 0.0, 0.0, 0.0, 1.0, 0.0])
+        self.loc[-1].bias.data = new_bias
 
     def generate_theta(self, x):
         theta = self.loc(x)
