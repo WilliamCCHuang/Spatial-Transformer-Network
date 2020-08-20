@@ -151,16 +151,18 @@ def train(model, train_dataloader, val_dataloader, criterion, optimizer, schedul
             writer.add_scalar('train loss', train_loss.item(), steps)
             writer.add_scalar('lr', optimizer.param_groups[0]['lr'], steps)
 
-            if steps % args.recode_norm == 0:
-                writer.add_scalar('norm', model.norm, steps)
+            if hasattr(model, 'norm'):
+                if steps % args.recode_norm == 0:
+                    writer.add_scalar('norm', model.norm, steps)
             
-            if steps % args.record_image == 0:
-                ori_imgs = imgs[:10]  # (10, 1, W, H)
-                aug_imgs = model.transform(ori_imgs)  # (10, 1, H, W)
-                all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (20, 1, H, W)
-                all_imgs = make_grid(all_imgs, nrow=10)  # (3, H, W)
+            if hasattr(model, 'transform'):
+                if steps % args.record_image == 0:
+                    ori_imgs = imgs[:10]  # (10, 1, W, H)
+                    aug_imgs = model.transform(ori_imgs)  # (10, 1, H, W)
+                    all_imgs = torch.cat((ori_imgs, aug_imgs), dim=0)  # (20, 1, H, W)
+                    all_imgs = make_grid(all_imgs, nrow=10)  # (3, H, W)
 
-                writer.add_image('Original / Transformed', all_imgs, steps)
+                    writer.add_image('Original / Transformed', all_imgs, steps)
             
             steps += 1
             
